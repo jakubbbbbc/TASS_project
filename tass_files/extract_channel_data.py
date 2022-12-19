@@ -98,10 +98,4 @@ if __name__ == '__main__':
     with open(fname_output, 'w', encoding='utf-8') as f:
         json.dump(channels, f)
 
-    with open(fname_output, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-        print('\n')
-        for key, value in data.items():
-            print(f'{key}:')
-            for key2, value2 in value.items():
-                print(f'\t{key2}: {value2}')
+

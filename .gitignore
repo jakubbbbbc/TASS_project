@@ -12,3 +12,6 @@ session_file.session-journal
 
 # files
 test.py
+
+# virtual environment
+venv/

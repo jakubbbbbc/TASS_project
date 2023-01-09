@@ -21,7 +21,8 @@ Run extract_channel_data.py to create channels.json. The file contains json that
   {
     "property1": "value",
     "property2": "value",
-    "cited_sources": ["source1", "source2"]
+    "cited_sources": ["source1", "source2"],
+    "citation_count": [number1, number2]
   }
 }
 ```

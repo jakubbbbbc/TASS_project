@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     print(f'Found {len(channel_names)} to process.')
 
-    # created dictionaty to store all generated channel data
+    # created dictionary to store all generated channel data
     channels = {}
     for i, fname in enumerate(channel_names):
         print(f'Processing channel {i+1}/{len(channel_names)}: {fname}, ', end='')
@@ -61,8 +61,8 @@ if __name__ == '__main__':
             # add message count
             channels[fname]['message_count'] = data['count']
 
-            # get set (no duplicates) of all cited domains by going through all messages
-            cited_sources = set()
+            # get dict (no duplicates) of all cited domains and their count by going through all messages
+            cited_sources = {}
             for mess in messages:
                 try:
                     # find urls (can contain http, www and subpages at this point)
@@ -87,13 +87,19 @@ if __name__ == '__main__':
                                     m = m[:dash_inds[1]]
 
                             if m.find('..') < 0:  # exclude strings with multiple points, eg. what...now
-                                cited_sources.add(m)
+                                # increment citation counter
+                                if m in cited_sources:
+                                    cited_sources[m] += 1
+                                # add source on first citation
+                                else:
+                                    cited_sources[m] = 1
                 except KeyError:
                     # occurs when post contains no message
                     pass
 
         print(f'number of cited sources: {len(cited_sources)}')
-        channels[fname]['cited_sources'] = list(cited_sources)
+        channels[fname]['cited_sources'] = list(cited_sources.keys())
+        channels[fname]['citation_count'] = list(cited_sources.values())
 
     with open(fname_output, 'w', encoding='utf-8') as f:
         json.dump(channels, f)

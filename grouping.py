@@ -2,8 +2,10 @@ import json
 import numpy as np
 
 
-def json_to_list(path='tass_files/channels.json'):
+def json_to_list(path='tass_files/channels.json', verified='verified'):
     """
+    verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
+
     Returns list where i-th element of list is dictionary (for i-th channel) with keys:
         - channel_name (short channel name)
         - full_name (full channel name)
@@ -14,26 +16,44 @@ def json_to_list(path='tass_files/channels.json'):
     data = json.load(f)
     f.close()
 
+    if verified in {'verified', 'nonverified'}:
+        list = []
+        for i, (key, value) in enumerate(data.items()):
+            if (verified == 'verified' and value['verified'] is True) or (verified == 'nonverified' and value['verified'] is False):
+                dict = {}
+                dict['channel_name'] = key
+                dict['full_name'] = value['channel_name']
+                dict['verified'] = value['verified']
+                dict['cited_sources'] = value['cited_sources']
+                list_sources = np.asarray(value['cited_sources'])
+                list_sources_count = np.asarray(value['citation_count'])
+                source_count_dict = {}
+                for source, count in zip(list_sources, list_sources_count):
+                    source_count_dict[source] = count
+                dict['source_count'] = source_count_dict
+                dict['n_all_citations'] = sum(list_sources_count)
+                dict['n_all_sources'] = len(list_sources)
+                list.append(dict)
+        n_channels = len(list)
+    else:
+        n_channels = len(data)
+        list = []
 
-    n_channels = len(data)
-    list = [None] * n_channels
-
-    for i, (key, value) in enumerate(data.items()):
-        dict = {}
-        dict['channel_name'] = key
-        dict['full_name'] = value['channel_name']
-        dict['verified'] = value['verified']
-        dict['cited_sources'] = value['cited_sources']
-        list_sources = np.asarray(value['cited_sources'])
-        list_sources_count = np.asarray(value['citation_count'])
-        source_count_dict = {}
-        for source, count in zip(list_sources, list_sources_count):
-            source_count_dict[source] = count
-        dict['source_count'] = source_count_dict
-        dict['n_all_citations'] = sum(list_sources_count)
-        dict['n_all_sources'] = len(list_sources)
-        list[i] = dict
-
+        for i, (key, value) in enumerate(data.items()):
+            dict = {}
+            dict['channel_name'] = key
+            dict['full_name'] = value['channel_name']
+            dict['verified'] = value['verified']
+            dict['cited_sources'] = value['cited_sources']
+            list_sources = np.asarray(value['cited_sources'])
+            list_sources_count = np.asarray(value['citation_count'])
+            source_count_dict = {}
+            for source, count in zip(list_sources, list_sources_count):
+                source_count_dict[source] = count
+            dict['source_count'] = source_count_dict
+            dict['n_all_citations'] = sum(list_sources_count)
+            dict['n_all_sources'] = len(list_sources)
+            list.append(dict)
     return list, n_channels
 
 
@@ -43,7 +63,7 @@ def produce_weights_for_network(data, x=1.):
     mode1:
         they cited at least x common sources, weight = 1
     mode2:
-        weight > x, weight = number_of_citations_from_common_sources/number_of_all_citations, weight = min(weight1, weight2) for 1., 2. channel accordingly
+        weight > x, else weight=0; weight = number_of_citations_from_common_sources/number_of_all_citations, weight = min(weight1, weight2) for 1., 2. channel accordingly
     mode3:
         they cited at least 1 common source, weight = n_of_common_sources_cited
     mode4:
@@ -141,8 +161,8 @@ def produce_edges(matrix, n, mode_id):
     return edge_list
 
 
-def combined(mode, x=0.):
-    channel_data_list, n = json_to_list()
+def combined(mode, verified, x=0.):
+    channel_data_list, n = json_to_list(verified=verified)
 
     output_data = produce_weights_for_network(channel_data_list, x)
 
@@ -153,10 +173,12 @@ def combined(mode, x=0.):
     print(node_list)
 
 
-# combined(0, 30)
+# combined(0, 'verified', 10)
 
-# combined(1, 0.85)
+# combined(1, 'all', 0.8)
+# combined(1, 'verified', 0.8)
+# combined(1, 'nonverified', 0.8)
 
-# combined(2)
+# combined(2, 'all')
 
-# combined(3, 0.4)
+# combined(3, 'all', 0.4)

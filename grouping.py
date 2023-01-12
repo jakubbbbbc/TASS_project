@@ -1,10 +1,34 @@
 import json
 import numpy as np
 
+"""
+README
 
-def json_to_list(path='tass_files/channels.json', verified='verified'):
+Use 'combined' function.
+"""
+
+
+def help_fun_1(key, value):
+    dict = {}
+    dict['channel_name'] = key
+    dict['full_name'] = value['channel_name']
+    dict['verified'] = value['verified']
+    dict['cited_sources'] = value['cited_sources']
+    list_sources = np.asarray(value['cited_sources'])
+    list_sources_count = np.asarray(value['citation_count'])
+    source_count_dict = {}
+    for source, count in zip(list_sources, list_sources_count):
+        source_count_dict[source] = count
+    dict['source_count'] = source_count_dict
+    dict['n_all_citations'] = sum(list_sources_count)
+    dict['n_all_sources'] = len(list_sources)
+    return dict
+
+
+def json_to_list(path='tass_files/channels.json', verified='verified', popularity=1):
     """
     verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
+    popularity - takes int value, returns only channels with subscriber_count > popularity
 
     Returns list where i-th element of list is dictionary (for i-th channel) with keys:
         - channel_name (short channel name)
@@ -16,44 +40,22 @@ def json_to_list(path='tass_files/channels.json', verified='verified'):
     data = json.load(f)
     f.close()
 
-    if verified in {'verified', 'nonverified'}:
-        list = []
-        for i, (key, value) in enumerate(data.items()):
-            if (verified == 'verified' and value['verified'] is True) or (verified == 'nonverified' and value['verified'] is False):
-                dict = {}
-                dict['channel_name'] = key
-                dict['full_name'] = value['channel_name']
-                dict['verified'] = value['verified']
-                dict['cited_sources'] = value['cited_sources']
-                list_sources = np.asarray(value['cited_sources'])
-                list_sources_count = np.asarray(value['citation_count'])
-                source_count_dict = {}
-                for source, count in zip(list_sources, list_sources_count):
-                    source_count_dict[source] = count
-                dict['source_count'] = source_count_dict
-                dict['n_all_citations'] = sum(list_sources_count)
-                dict['n_all_sources'] = len(list_sources)
-                list.append(dict)
-        n_channels = len(list)
-    else:
-        n_channels = len(data)
-        list = []
-
-        for i, (key, value) in enumerate(data.items()):
-            dict = {}
-            dict['channel_name'] = key
-            dict['full_name'] = value['channel_name']
-            dict['verified'] = value['verified']
-            dict['cited_sources'] = value['cited_sources']
-            list_sources = np.asarray(value['cited_sources'])
-            list_sources_count = np.asarray(value['citation_count'])
+    list = []
+    for _, (key, value) in enumerate(data.items()):
+        dict = help_fun_1(key, value)
+        if not (((verified == 'verified' and value['verified'] is True) or (verified == 'nonverified' and value['verified'] is False) or verified == 'all') and (value['subscribers_count'] > popularity)):
+            dict['cited_sources'] = []
+            list_sources = np.asarray([])
+            list_sources_count = np.asarray([])
             source_count_dict = {}
             for source, count in zip(list_sources, list_sources_count):
                 source_count_dict[source] = count
             dict['source_count'] = source_count_dict
             dict['n_all_citations'] = sum(list_sources_count)
-            dict['n_all_sources'] = len(list_sources)
-            list.append(dict)
+            dict['n_all_sources'] = len(list_sources) 
+        list.append(dict)
+    n_channels = len(list)
+
     return list, n_channels
 
 
@@ -156,13 +158,28 @@ def produce_edges(matrix, n, mode_id):
             if mode_id == 1:
                 weight = min(matrix[i, j, mode_id], matrix[j, i, mode_id])
             if weight > 0:
-                edge_list.append([i, j, weight])
+                edge_list.append([j, i, weight])
     
     return edge_list
 
 
-def combined(mode, verified, x=0.):
-    channel_data_list, n = json_to_list(verified=verified)
+def combined(mode, verified, popularity, x=0.):
+    """
+    2 channels are connected when:
+    mode1:
+        they cited at least x common sources, weight = 1
+    mode2:
+        weight > x, else weight=0; weight = number_of_citations_from_common_sources/number_of_all_citations, weight = min(weight1, weight2) for 1., 2. channel accordingly
+    mode3:
+        they cited at least 1 common source, weight = n_of_common_sources_cited
+    mode4:
+        weight > x, weight = number_of_common_sources/number_of_all_sources, weight = min(weight1, weight2) for 1., 2. channel accordingly
+
+    verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
+
+    popularity - takes int value, returns only channels with subscriber_count > popularity
+    """
+    channel_data_list, n = json_to_list(verified=verified, popularity=popularity)
 
     output_data = produce_weights_for_network(channel_data_list, x)
 
@@ -170,15 +187,24 @@ def combined(mode, verified, x=0.):
 
     node_list = produce_edges(matrix, n, mode)
 
-    print(node_list)
+    return node_list
 
 
-# combined(0, 'verified', 10)
+def get_name_by_id(id):
+    channel_data_list, _ = json_to_list()
+    return channel_data_list[id]['channel_name']
 
-# combined(1, 'all', 0.8)
-# combined(1, 'verified', 0.8)
-# combined(1, 'nonverified', 0.8)
 
-# combined(2, 'all')
+# combined(0, 'verified', 1, 10)
 
-# combined(3, 'all', 0.4)
+# combined(1, 'all', 1, 0.8)
+# combined(1, 'verified', 600000, 0.08)
+# combined(1, 'nonverified', 1, 0.8)
+
+# combined(2, 'all', 1)
+
+# combined(3, 'all', 1, 0.4)
+
+print(combined(1, 'verified', 500000, 0.8))
+
+# print(get_name_by_id(0))

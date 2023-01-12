@@ -25,7 +25,7 @@ def help_fun_1(key, value):
     return dict
 
 
-def json_to_list(path='tass_files/channels.json', verified='verified', popularity=1):
+def json_to_list(path='tass_files/channels.json', verified='verified', popularity_lower=0, popularity_upper=100000):
     """
     verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
     popularity - takes int value, returns only channels with subscriber_count > popularity
@@ -43,7 +43,7 @@ def json_to_list(path='tass_files/channels.json', verified='verified', popularit
     list = []
     for _, (key, value) in enumerate(data.items()):
         dict = help_fun_1(key, value)
-        if not (((verified == 'verified' and value['verified'] is True) or (verified == 'nonverified' and value['verified'] is False) or verified == 'all') and (value['subscribers_count'] > popularity)):
+        if not (((verified == 'verified' and value['verified'] is True) or (verified == 'nonverified' and value['verified'] is False) or verified == 'all') and ((value['subscribers_count'] > popularity_lower) and (value['subscribers_count'] < popularity_upper))):
             dict['cited_sources'] = []
             list_sources = np.asarray([])
             list_sources_count = np.asarray([])
@@ -163,7 +163,7 @@ def produce_edges(matrix, n, mode_id):
     return edge_list
 
 
-def combined(mode, verified, popularity, x=0.):
+def combined(mode, verified, popularity_lower, popularity_upper, x=0.):
     """
     2 channels are connected when:
     mode1:
@@ -179,7 +179,7 @@ def combined(mode, verified, popularity, x=0.):
 
     popularity - takes int value, returns only channels with subscriber_count > popularity
     """
-    channel_data_list, n = json_to_list(verified=verified, popularity=popularity)
+    channel_data_list, n = json_to_list(verified=verified, popularity_lower=popularity_lower, popularity_upper=popularity_upper)
 
     output_data = produce_weights_for_network(channel_data_list, x)
 
@@ -205,6 +205,6 @@ def get_name_by_id(id):
 
 # combined(3, 'all', 1, 0.4)
 
-print(combined(1, 'verified', 500000, 0.8))
+print(combined(1, 'verified', 0, 500000, 0.8))
 
 # print(get_name_by_id(0))

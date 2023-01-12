@@ -177,7 +177,7 @@ def combined(mode, verified, popularity_lower, popularity_upper, x=0.):
 
     verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
 
-    popularity - takes int value, returns only channels with subscriber_count > popularity
+    popularity_lower, popularity_upper - takes int value, returns only channels with subscriber_count > popularity_lower and < popularity_upper
     """
     channel_data_list, n = json_to_list(verified=verified, popularity_lower=popularity_lower, popularity_upper=popularity_upper)
 

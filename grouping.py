@@ -164,8 +164,8 @@ def produce_edges(matrix, n, mode_id):
 
 
 def combined(mode, verified, popularity_lower, popularity_upper, x=0.):
-    """
-    2 channels are connected when:
+    """ 
+    2 channels are connected when:bb
     mode1:
         they cited at least x common sources, weight = 1
     mode2:

@@ -3,6 +3,7 @@ __pycache__/
 .ipynb_checkpoints/
 .vscode/
 .venv
+networkx-test.ipynb
 
 # Collected data
 output/

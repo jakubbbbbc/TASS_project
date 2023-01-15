@@ -4,11 +4,14 @@ import numpy as np
 """
 README
 
-Use 'combined' function.
+Use 'combined' function for creating list of weighted channel pairs.
 """
 
 
 def help_fun_1(key, value):
+    """
+    helper function
+    """
     dict = {}
     dict['channel_name'] = key
     dict['full_name'] = value['channel_name']
@@ -27,14 +30,17 @@ def help_fun_1(key, value):
 
 def json_to_list(path='tass_files/channels.json', verified='all', popularity_lower=0, popularity_upper=100000000):
     """
-    verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
-    popularity - takes int value, returns only channels with subscriber_count > popularity
+    verified - takes {'verified', 'nonverified', 'all'}. Returns only verified, non-verified or all channels.
+    popularity_lower, popularity_upper - takes int values. Returns only channels with subscriber_count in between those values.
 
     Returns list where i-th element of list is dictionary (for i-th channel) with keys:
         - channel_name (short channel name)
         - full_name (full channel name)
         - verified (True/False)
         - cited_sources (list of strings {url adresses})
+        - source_count (dictionary pairing source name and number of citations)
+        - n_all_citations (total number of citations)
+        - n_all_sources (total number of sources)
     """
     f = open(path)
     data = json.load(f)
@@ -42,7 +48,9 @@ def json_to_list(path='tass_files/channels.json', verified='all', popularity_low
 
     list = []
     for _, (key, value) in enumerate(data.items()):
+        #Create dictionary entries for one channel
         dict = help_fun_1(key, value)
+        #If channel does not meet demanded conditions, zero its sources and counts
         if not (((verified == 'verified' and value['verified'] is True) or (verified == 'nonverified' and value['verified'] is False) or verified == 'all') and ((value['subscribers_count'] > popularity_lower) and (value['subscribers_count'] < popularity_upper))):
             dict['cited_sources'] = []
             list_sources = np.asarray([])
@@ -61,6 +69,8 @@ def json_to_list(path='tass_files/channels.json', verified='all', popularity_low
 
 def produce_weights_for_network(data, x=1.):
     """
+    Function responsible for calculating weight between channel pairs for different modes.
+
     2 channels are connected when:
     mode1:
         they cited at least x common sources, weight = 1
@@ -131,6 +141,9 @@ def produce_weights_for_network(data, x=1.):
 
 
 def produce_weight_matrix(data, n_channels):
+    """
+    Produces weight matrix (nxn for n channels) from previous data.
+    """
     list_modes = ['mode1', 'mode2', 'mode3', 'mode4']
     n_modes = len(list_modes)
     matrix = np.zeros((n_channels, n_channels, n_modes))
@@ -147,9 +160,10 @@ def produce_weight_matrix(data, n_channels):
 
 def produce_edges(matrix, n, mode_id):
     """
-    Assumed that matrix is symetric.
+    Assumed that weight matrix is symetric.
 
     Returns list of lists in format: [ch1_id, ch2_id, weight]
+    That list contains only valid edges (only for connected pairs)
     """
     edge_list = list()
     for i in range(n):
@@ -165,6 +179,10 @@ def produce_edges(matrix, n, mode_id):
 
 def combined(mode, verified, popularity_lower, popularity_upper, x=0.):
     """
+    Returns list of lists in format: [ch1_id, ch2_id, weight]
+    That list contains only valid edges (only for connected pairs)
+    Takes arguments described below:
+
     2 channels are connected when:
     mode1:
         they cited at least x common sources, weight = 1
@@ -175,9 +193,8 @@ def combined(mode, verified, popularity_lower, popularity_upper, x=0.):
     mode4:
         weight > x, weight = number_of_common_sources/number_of_all_sources, weight = min(weight1, weight2) for 1., 2. channel accordingly
 
-    verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
-
-    popularity_lower, popularity_upper - takes int value, returns only channels with subscriber_count > popularity_lower and < popularity_upper
+    verified - takes {'verified', 'nonverified', 'all'}. Returns only verified, non-verified or all channels.
+    popularity_lower, popularity_upper - takes int values. Returns only channels with subscriber_count in between those values.
     """
     channel_data_list, n = json_to_list(verified=verified, popularity_lower=popularity_lower, popularity_upper=popularity_upper)
 
@@ -193,18 +210,3 @@ def combined(mode, verified, popularity_lower, popularity_upper, x=0.):
 def get_name_by_id(id):
     channel_data_list, _ = json_to_list()
     return channel_data_list[id]['channel_name']
-
-
-# combined(0, 'verified', 1, 10)
-
-# combined(1, 'all', 1, 0.8)
-# combined(1, 'verified', 600000, 0.08)
-# combined(1, 'nonverified', 1, 0.8)
-
-# combined(2, 'all', 1)
-
-# combined(3, 'all', 1, 0.4)
-
-print(combined(1, 'verified', 0, 500000, 0.8))
-
-# print(get_name_by_id(0))

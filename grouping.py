@@ -194,6 +194,10 @@ def get_name_by_id(id):
     channel_data_list, _ = json_to_list()
     return channel_data_list[id]['channel_name']
 
+def get_node_info_by_id(id):
+    channel_data_list, _ = json_to_list()
+    return channel_data_list[id]
+
 
 # combined(0, 'verified', 1, 10)
 

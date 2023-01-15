@@ -25,7 +25,7 @@ def help_fun_1(key, value):
     return dict
 
 
-def json_to_list(path='tass_files/channels.json', verified='verified', popularity_lower=0, popularity_upper=100000):
+def json_to_list(path='tass_files/channels.json', verified='all', popularity_lower=0, popularity_upper=100000000):
     """
     verified - takes {'verified', 'nonverified', 'all'}. Returns verified, non-verified or all accounts accordingly.
     popularity - takes int value, returns only channels with subscriber_count > popularity
